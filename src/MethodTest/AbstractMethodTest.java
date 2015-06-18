@@ -21,6 +21,8 @@ import org.redisson.Redisson;
  * @author dotrungduchd
  */
 public abstract class AbstractMethodTest {
+    protected String nameMethod;
+    
     private static final String SEPARATOR = "\t";
     // Input
     private boolean isCluster = true;
@@ -213,6 +215,9 @@ public abstract class AbstractMethodTest {
         this.sizeItem = sizeItem;
     }
     
+    public AbstractMethodTest(){
+    }
+    
     /**
      * Config Redis Cluster with string Address
      */
@@ -297,8 +302,8 @@ public abstract class AbstractMethodTest {
                 }
             }
             
-            System.out.println(getTotalTime() + " " + getNumRequest());
-            System.out.println(numThreadFinish + " Thread Done" + "");
+            //System.out.println(getTotalTime() + " " + getNumRequest());
+            //System.out.println(numThreadFinish + " Thread Done" + "");
             if (numThreadFinish >= numThread)
                 isFinish = true;
             
@@ -333,8 +338,9 @@ public abstract class AbstractMethodTest {
      *  ResponseAverage
      */
     private void WriteLog(){
-        getLogger().info(SEPARATOR + numThread + SEPARATOR + numRequest + SEPARATOR
-                + sizeItem + SEPARATOR + requestPerSecond + SEPARATOR + responseAverage);
+        getLogger().info(SEPARATOR + nameMethod + SEPARATOR + numThread + 
+                SEPARATOR + numRequest + SEPARATOR + sizeItem + SEPARATOR + 
+                requestPerSecond + SEPARATOR + responseAverage);
         System.out.println(getTotalTime() + " " + getTotalRequest());
     }
     
@@ -378,6 +384,13 @@ public abstract class AbstractMethodTest {
         // Config Log4j
         ConfigLog4j(null, AbstractMethodError.class, strLog4jConfig);
                 
+    }
+    
+    public void ResetResult(){
+        this.totalRequest = 0;
+        this.totalTime = 0;
+        this.requestPerSecond = -1;
+        this.requestPerSecond = -1;
     }
     
     /**

@@ -12,15 +12,14 @@ import org.redisson.core.RBucket;
  *
  * @author dotrungduchd
  */
-public class SetMethodTest extends AbstractMethodTest{
-
-    public SetMethodTest(){
-        nameMethod = "Set";
-    }
+public class GetMethodTest extends AbstractMethodTest{
+     public GetMethodTest(){
+         nameMethod = "Get";
+     }
     
-    public SetMethodTest(boolean isCluster, String strAddress, int numThread, long numItem, int sizeItem) {
-        super(isCluster, strAddress, numThread, numItem, sizeItem);
-        nameMethod = "Set";
+    public GetMethodTest(boolean isCluster, String strAddress, int numThread, long numItem) {
+        super(isCluster, strAddress, numThread, numItem, 0);
+        nameMethod = "Get";
     }
     
     @Override
@@ -33,7 +32,7 @@ public class SetMethodTest extends AbstractMethodTest{
          // Start time
         long start = System.nanoTime();        
 
-        bucket.set(getAnyObject());
+        AnyObject any = bucket.get();
 
         // End time
         long end = System.nanoTime();
@@ -41,5 +40,5 @@ public class SetMethodTest extends AbstractMethodTest{
         // Time execute method
         return end - start;
         
-    }    
+    }   
 }

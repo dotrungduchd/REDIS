@@ -13,6 +13,9 @@ public class AnyObject {
     private long id = 0;
     private byte[] datas = null;
     
+    public AnyObject(){
+    }
+    
     public AnyObject(int size){        
         datas = new byte[size];
         for(int i = 0; i < size; i++)
@@ -31,5 +34,19 @@ public class AnyObject {
      */
     public void setId(long id) {
         this.id = id;
+    }
+
+    /**
+     * @return the datas
+     */
+    public byte[] getDatas() {
+        return datas;
+    }
+
+    /**
+     * @param datas the datas to set
+     */
+    public void setDatas(byte[] datas) {
+        this.datas = datas;
     }
 }

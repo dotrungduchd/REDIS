@@ -6,6 +6,8 @@
 package redisson.performance.test;
 
 import MethodTest.AbstractMethodTest;
+import MethodTest.GetMethodTest;
+import MethodTest.MethodTestFactory;
 import MethodTest.SetMethodTest;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -20,6 +22,7 @@ import java.util.Properties;
  * @author dotrungduchd
  */
 public class RedissonPerformanceTest {
+    //<editor-fold defaultstate="collapsed" desc="define variable">
     private static int MIN_THREAD = 2;
     private static int MIN_NUM_REQUEST = 1000;
     private static int MIN_SIZE_ITEM = 1024;
@@ -30,14 +33,18 @@ public class RedissonPerformanceTest {
     
     private static int UNIT_REQUEST = 1000;
     private static int LOOP = 5;
+    private static String[] LIST_METHOD = null;
     
     
     private static String mode = "manual";
     private static String strAddress = "127.0.0.1:8081 127.0.0.1:8082 127.0.0.1:8083";
     private static String nameMethod;
     private static boolean isCluster;
+//</editor-fold>
     
-            
+    /**
+     * Load Config from file
+     */      
     private static void LoadConfig(){
         
         Properties prop = new Properties();
@@ -65,7 +72,9 @@ public class RedissonPerformanceTest {
             UNIT_REQUEST = Integer.valueOf(prop.getProperty("UNIT_REQUEST"));
             LOOP = Integer.valueOf(prop.getProperty("LOOP"));
                     
-            
+            String listMethod = prop.getProperty("LIST_METHOD");
+            LIST_METHOD = listMethod.split(",");
+            int a;
         } catch (IOException ex) {
             Logger.getLogger(RedissonPerformanceTest.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -127,24 +136,31 @@ public class RedissonPerformanceTest {
         }
     }
 
-    
+    /**
+     * Manual testing with user parameter
+     */
     private static void ManualTesting() {
         AbstractMethodTest method = null;
 
-        switch(nameMethod){
-            case "Set":
-                method = new SetMethodTest(isCluster, strAddress, MIN_THREAD,
-                        MIN_NUM_REQUEST, MIN_SIZE_ITEM);
-                break;
-            default:
-                System.out.println("-------Not correct method. Exit");
-                return ;
+        method = MethodTestFactory.createMethodTest(nameMethod, isCluster, strAddress, 
+                MIN_THREAD, MIN_NUM_REQUEST, MIN_SIZE_ITEM);
+                
+        System.out.println("========= test start");
+        
+        if (method == null){
+            System.out.println("ERROR: Can not create method");
+            return;
         }
-        System.out.println("now");
+        
         method.Test();
-        System.out.println("end now");
+        
+        System.out.println("========= test end");
     }
 
+    /**
+     * Parse parameter from arguments
+     * @param args is array string arguments
+     */
     private static void ParseArguments(String[] args) {
         mode = args[0];
         isCluster = args[1].equals("true") || args[1].equals("True") || args[1].equals("TRUE");
@@ -156,33 +172,83 @@ public class RedissonPerformanceTest {
         MIN_SIZE_ITEM = Integer.parseInt(args[6]);
     }
 
+    /**
+     * Auto testing with Config from file
+     */
     private static void AutoTesting() {
-        // Init config
-        AbstractMethodTest methodTest = new SetMethodTest(true, strAddress, 1, 1000, 1024);
-        methodTest.Init(strAddress, "./src/log.properties");
-
-        //            double prevRequestPerSecond = 0;
-        //            double prevResponeAverage = 0;
-        //
-        //            double curRequestPerSecond = 0;
-        //            double curResponeAverage = 0;
-
+        // Create list method and run
+        AbstractMethodTest[] methods = new AbstractMethodTest[LIST_METHOD.length];
+        for (int t = 0; t < LIST_METHOD.length; t++){
+            System.out.println("---- Start run method " + LIST_METHOD[t]);
+            
+            methods[t] = MethodTestFactory.createMethodTest(LIST_METHOD[t]);
+            
+            methods[t].Init(strAddress, "./src/log.properties");
+            
+            RunMethodTest(methods[t]);
+            
+            System.out.println("---- End run method " + LIST_METHOD[t]);
+        }
+    }
+    
+    /**
+     * Run method test instance
+     * @param methodTest 
+     */
+    private static void RunMethodTest(AbstractMethodTest methodTest){
+        double prevMaxRPS = 0;
+        double curMaxRPS = 0;
+        
+        double prevRPSAverage = 0;
+        double curRPSAverage = 0;
+        
+        double tempRPS = 0;
+        double sumRPSAverage = 0;
         for (int i = MIN_THREAD; i <= MAX_THREAD; i*= 2){
+            curMaxRPS = 0;
+            sumRPSAverage = 0;
             for (int j = MIN_SIZE_ITEM ; j <=  MAX_SIZE_ITEM; j *= 2){
-                for (int k = MIN_NUM_REQUEST; k <= MAX_NUM_REQUEST; k +=UNIT_REQUEST){
+                for (int k = MIN_NUM_REQUEST; k <= MAX_NUM_REQUEST; k += UNIT_REQUEST){
                     for(int l = 0; l < LOOP;  l++){
+                        // Reset result
+                        methodTest.ResetResult();
+                        
                         // Update parameter
                         methodTest.Update(i, k, j);
 
                         // Execute method
                         methodTest.Run();
+                        
+                        tempRPS = methodTest.getRequestPerSecond();
+                        sumRPSAverage += tempRPS;
+//                        if(tempRPS > curMaxRPS){
+//                            curMaxRPS = tempRPS;
+//                        }                        
                     }
                 }
             }
-
-            //                double requestPerSecond = methodTest.getRequestPerSecond();
-            //                double responseAverage = methodTest.getResponseAverage();
+            
+            // Average
+            long sumRequest = ((MAX_NUM_REQUEST - MIN_NUM_REQUEST) / UNIT_REQUEST) * 
+                    (int)(Math.log((double)(MAX_SIZE_ITEM / MIN_NUM_REQUEST)) / Math.log(2.0) + 1);
+            curRPSAverage = sumRPSAverage / sumRequest;
+            System.out.println("===== Average of thread " + i + " ::: " + curRPSAverage);
+            if (prevRPSAverage <= curRPSAverage) {
+                prevRPSAverage = curRPSAverage;
+            } 
+            else {
+                System.out.println("===== Average RequestPerSecond was not increase");
+                return;
+            }
+            
+//            // Max
+//            if (prevMaxRPS <= curMaxRPS){
+//                prevMaxRPS = curMaxRPS;
+//            } 
+//            else {
+//                System.out.println("===== Max RequestPerSecond was not increase");
+//                return;
+//            }
         }
     }
-    
 }
