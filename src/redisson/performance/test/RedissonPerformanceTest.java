@@ -58,7 +58,7 @@ public class RedissonPerformanceTest {
             // get the property value and print it out
             mode = prop.getProperty("mode");
             strAddress = prop.getProperty("strAddress");
-            isCluster = prop.getProperty("isCluster").equals("true")!=true?true:false;
+            isCluster = prop.getProperty("isCluster").equals("true")==true?true:false;
             nameMethod = prop.getProperty("nameMethod");
             
             MIN_THREAD = Integer.valueOf(prop.getProperty("MIN_THREAD"));
@@ -181,9 +181,14 @@ public class RedissonPerformanceTest {
         for (int t = 0; t < LIST_METHOD.length; t++){
             System.out.println("---- Start run method " + LIST_METHOD[t]);
             
-            methods[t] = MethodTestFactory.createMethodTest(LIST_METHOD[t]);
+            methods[t] = MethodTestFactory.createMethodTest(LIST_METHOD[t], isCluster,
+                    strAddress, MIN_THREAD, MIN_NUM_REQUEST, MIN_SIZE_ITEM);
+            
+            System.out.println("---- Start int method " + LIST_METHOD[t]);
             
             methods[t].Init(strAddress, "./src/log.properties");
+            
+            System.out.println("---- End init method " + LIST_METHOD[t]);
             
             RunMethodTest(methods[t]);
             

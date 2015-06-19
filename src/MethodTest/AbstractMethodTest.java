@@ -6,9 +6,6 @@
 package MethodTest;
 
 import Entity.AnyObject;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
-import java.util.Dictionary;
 import java.util.logging.Level;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -37,7 +34,7 @@ public abstract class AbstractMethodTest {
     private long totalTime = 0;
     private long totalRequest = 0;
     // Instance
-    public Redisson redisson = null;
+    public Redisson redisson = Redisson.create();
     private static Logger logger = null;
 
     //<editor-fold defaultstate="collapsed" desc="encapsulated get/set field">
@@ -222,19 +219,23 @@ public abstract class AbstractMethodTest {
      * Config Redis Cluster with string Address
      */
     public void ConfigRedis(){
-        String[] a = strAddress.split(" ");
         Config config = new Config();
-        if(isCluster)
+        
+        if(this.isCluster){
              // sets cluster state scan interval
             config.useClusterServers().setScanInterval(2000);
-        else
-            config.useSingleServer();
-        config.useClusterServers().setMasterConnectionPoolSize(512);
-        System.out.println(config.useClusterServers().getMasterConnectionPoolSize());
-        
-        for (String address : a) {
-            config.useClusterServers().addNodeAddress(address);
+            config.useClusterServers().setMasterConnectionPoolSize(512);
+            System.out.println(config.useClusterServers().getMasterConnectionPoolSize());
+
+            String[] a = strAddress.split(" ");
+            for (String address : a) {
+                config.useClusterServers().addNodeAddress(address);
+            }
         }
+        else
+            // single Redis instance
+            config.useSingleServer().setAddress(strAddress);
+        
         
         redisson = Redisson.create(config);
         //redisson.flushdb(); 

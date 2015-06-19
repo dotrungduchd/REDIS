@@ -27,7 +27,7 @@ public class GetMethodTest extends AbstractMethodTest{
         RBucket<AnyObject> bucket = null;
         bucket = redisson.getBucket("key" + index);
         
-        getAnyObject().setId(index);
+        // getAnyObject().setId(index);
         
          // Start time
         long start = System.nanoTime();        
